@@ -56,6 +56,7 @@ function generateTimeline() {
         yearBlock.className = 'year-block';
         yearBlock.setAttribute('aria-label', `Year ${year}`);
         yearBlock.setAttribute('tabindex', '-1');
+        yearBlock.style.setProperty('--year-index', year - 1);
 
         const yearTitle = document.createElement('div');
         yearTitle.className = 'year-title';
@@ -199,4 +200,101 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && !editModal.hidden) {
         closeModal();
     }
-}); 
+});
+
+// --- DRAG/SWIPE/KEYBOARD SCROLL UX LAYER ---
+(function enableTimelineDragScroll() {
+    const track = timelineYears;
+    let isDown = false;
+    let startX;
+    let scrollLeft;
+    let lastMove = 0;
+    let velocity = 0;
+    let rafId = null;
+
+    // Mouse events
+    track.addEventListener('mousedown', (e) => {
+        isDown = true;
+        track.classList.add('dragging');
+        startX = e.pageX - track.offsetLeft;
+        scrollLeft = track.scrollLeft;
+        lastMove = e.pageX;
+        cancelMomentum();
+    });
+    track.addEventListener('mouseleave', () => {
+        isDown = false;
+        track.classList.remove('dragging');
+    });
+    track.addEventListener('mouseup', () => {
+        isDown = false;
+        track.classList.remove('dragging');
+        startMomentum();
+    });
+    track.addEventListener('mousemove', (e) => {
+        if (!isDown) return;
+        e.preventDefault();
+        const x = e.pageX - track.offsetLeft;
+        const walk = (x - startX);
+        velocity = e.pageX - lastMove;
+        lastMove = e.pageX;
+        track.scrollLeft = scrollLeft - walk;
+    });
+
+    // Touch events
+    let touchStartX = 0;
+    let touchScrollLeft = 0;
+    let lastTouchMove = 0;
+    let touchVelocity = 0;
+    track.addEventListener('touchstart', (e) => {
+        isDown = true;
+        touchStartX = e.touches[0].pageX;
+        touchScrollLeft = track.scrollLeft;
+        lastTouchMove = e.touches[0].pageX;
+        cancelMomentum();
+    });
+    track.addEventListener('touchend', () => {
+        isDown = false;
+        startMomentum(true);
+    });
+    track.addEventListener('touchmove', (e) => {
+        if (!isDown) return;
+        const x = e.touches[0].pageX;
+        const walk = (x - touchStartX);
+        touchVelocity = x - lastTouchMove;
+        lastTouchMove = x;
+        track.scrollLeft = touchScrollLeft - walk;
+    });
+
+    // Momentum scrolling
+    function startMomentum(isTouch) {
+        let v = isTouch ? touchVelocity : velocity;
+        if (Math.abs(v) < 2) return;
+        let decay = 0.95;
+        function momentum() {
+            track.scrollLeft -= v;
+            v *= decay;
+            if (Math.abs(v) > 0.5) {
+                rafId = requestAnimationFrame(momentum);
+            } else {
+                cancelMomentum();
+            }
+        }
+        momentum();
+    }
+    function cancelMomentum() {
+        if (rafId) cancelAnimationFrame(rafId);
+        rafId = null;
+    }
+
+    // Keyboard navigation
+    track.setAttribute('tabindex', '0');
+    track.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft') {
+            e.preventDefault();
+            track.scrollBy({ left: -track.clientWidth, behavior: 'smooth' });
+        } else if (e.key === 'ArrowRight') {
+            e.preventDefault();
+            track.scrollBy({ left: track.clientWidth, behavior: 'smooth' });
+        }
+    });
+})(); 
