@@ -1,300 +1,129 @@
-// State management
-let timelineData = new Map();
-let currentEditCell = null;
-let yearsCount = 0;
+/* =========================================================
+   script.js
+   Purpose : All interactive logic for the timeline planner
+   Author  : YOUR-NAME-HERE
+   Date    : 2025-06-25
+========================================================== */
 
-// DOM Elements
-const setupSection = document.getElementById('setup-section');
-const yearsInput = document.getElementById('years-input');
-const generateBtn = document.getElementById('generate-btn');
-const resetBtn = document.getElementById('reset-btn');
-const timelineYears = document.getElementById('timeline-years');
-const controls = document.getElementById('controls');
-const downloadBtn = document.getElementById('download-btn');
-const printBtn = document.getElementById('print-btn');
-const editModal = document.getElementById('edit-modal');
-const planText = document.getElementById('plan-text');
-const saveBtn = document.getElementById('save-btn');
-const cancelBtn = document.getElementById('cancel-btn');
-const progressBarInner = document.getElementById('progress-bar-inner');
-const ariaLive = document.getElementById('aria-live');
+/*-------------  Helper constants -------------*/
+const timelineEl   = document.getElementById('timeline');
+const yearModalEl  = document.getElementById('yearModal');
+const yearForm     = document.getElementById('yearForm');
+const resetBtn     = document.getElementById('resetBtn');
 
-// Event Listeners
-generateBtn.addEventListener('click', generateTimeline);
-downloadBtn.addEventListener('click', downloadPlan);
-printBtn.addEventListener('click', () => window.print());
-saveBtn.addEventListener('click', savePlan);
-cancelBtn.addEventListener('click', closeModal);
-resetBtn.addEventListener('click', resetTimeline);
-
-yearsInput.addEventListener('input', () => {
-    resetBtn.hidden = true;
+/*-------------  Event listeners -------------*/
+// ➊ First-time (or manual) creation of a timeline
+yearForm.addEventListener('submit', e => {
+  e.preventDefault();
+  const years = parseInt(document.getElementById('yearsInput').value, 10);
+  if (Number.isFinite(years) && years >= 1 && years <= 10) {
+    buildTimeline(years);
+    yearModalEl.style.display = 'none';
+  }
 });
 
-// Generate timeline grid grouped by year
-function generateTimeline() {
-    const years = parseInt(yearsInput.value);
-    if (years < 1 || years > 6) {
-        alert('Please enter a number between 1 and 6');
-        return;
-    }
-    yearsCount = years;
-    timelineYears.innerHTML = '';
-    timelineData.clear();
-    resetBtn.hidden = false;
-
-    // Animate progress bar
-    progressBarInner.style.width = '0%';
-    setTimeout(() => {
-        progressBarInner.style.width = '100%';
-    }, 100);
-
-    // Group semesters by year
-    const semesters = ['Fall', 'Winter', 'Summer'];
-    for (let year = 1; year <= years; year++) {
-        const yearBlock = document.createElement('section');
-        yearBlock.className = 'year-block';
-        yearBlock.setAttribute('aria-label', `Year ${year}`);
-        yearBlock.setAttribute('tabindex', '-1');
-        yearBlock.style.setProperty('--year-index', year - 1);
-
-        const yearTitle = document.createElement('div');
-        yearTitle.className = 'year-title';
-        yearTitle.textContent = `Year ${year}`;
-        yearBlock.appendChild(yearTitle);
-
-        const semestersRow = document.createElement('div');
-        semestersRow.className = 'year-semesters';
-        for (const semester of semesters) {
-            const cell = createSemesterCell(year, semester);
-            semestersRow.appendChild(cell);
-        }
-        yearBlock.appendChild(semestersRow);
-        timelineYears.appendChild(yearBlock);
-    }
-    timelineYears.hidden = false;
-    controls.hidden = false;
-    announce(`Timeline generated for ${years} year${years > 1 ? 's' : ''}.`);
-}
-
-// Create semester cell
-function createSemesterCell(year, semester) {
-    const cell = document.createElement('div');
-    cell.className = 'semester-cell';
-    cell.setAttribute('tabindex', '0');
-    cell.setAttribute('role', 'button');
-    cell.setAttribute('aria-label', `Year ${year} ${semester} semester plan`);
-
-    const heading = document.createElement('h3');
-    heading.textContent = `${semester}`;
-    cell.appendChild(heading);
-
-    const content = document.createElement('div');
-    content.className = 'cell-content';
-    cell.appendChild(content);
-
-    // Add click and keyboard event listeners
-    cell.addEventListener('click', () => openModal(cell, year, semester));
-    cell.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            openModal(cell, year, semester);
-        }
-    });
-
-    // Animate in
-    cell.style.opacity = 0;
-    setTimeout(() => {
-        cell.style.opacity = 1;
-    }, 100 * (year - 1) + (semester === 'Fall' ? 0 : semester === 'Winter' ? 1 : 2) * 80);
-
-    return cell;
-}
-
-// Modal functions
-function openModal(cell, year, semester) {
-    currentEditCell = cell;
-    const cellId = `Year ${year} - ${semester}`;
-    planText.value = timelineData.get(cellId) || '';
-    editModal.hidden = false;
-    planText.focus();
-    announce(`Editing plan for Year ${year} ${semester}.`);
-}
-
-function closeModal() {
-    editModal.hidden = true;
-    currentEditCell = null;
-    planText.value = '';
-}
-
-function savePlan() {
-    if (!currentEditCell) return;
-    // Find year and semester from DOM
-    const yearBlock = currentEditCell.closest('.year-block');
-    const year = yearBlock.querySelector('.year-title').textContent.replace(/[^0-9]/g, '');
-    const semester = currentEditCell.querySelector('h3').textContent;
-    const cellId = `Year ${year} - ${semester}`;
-    const content = currentEditCell.querySelector('.cell-content');
-    const sanitizedText = sanitizeInput(planText.value);
-    timelineData.set(cellId, sanitizedText);
-    content.textContent = sanitizedText;
-    closeModal();
-    announce(`Plan saved for Year ${year} ${semester}.`);
-}
-
-// Download functionality
-function downloadPlan() {
-    const content = generatePlanText();
-    const blob = new Blob([content], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'tru_timeline_plan.txt';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    announce('Plan downloaded as text file.');
-}
-
-function generatePlanText() {
-    let text = 'Your Path Through TRU\n';
-    text += '====================\n\n';
-    for (let year = 1; year <= yearsCount; year++) {
-        text += `Year ${year}\n`;
-        text += `${'-'.repeat(6 + String(year).length)}\n`;
-        ['Fall', 'Winter', 'Summer'].forEach(semester => {
-            const cellId = `Year ${year} - ${semester}`;
-            const content = timelineData.get(cellId);
-            if (content) {
-                text += `${semester}:\n${content}\n\n`;
-            }
-        });
-    }
-    return text;
-}
-
-function resetTimeline() {
-    timelineYears.innerHTML = '';
-    timelineData.clear();
-    controls.hidden = true;
-    progressBarInner.style.width = '0%';
-    resetBtn.hidden = true;
-    announce('Timeline reset.');
-}
-
-// Utility functions
-function sanitizeInput(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.textContent;
-}
-
-function announce(msg) {
-    ariaLive.textContent = '';
-    setTimeout(() => { ariaLive.textContent = msg; }, 50);
-}
-
-// Handle Escape key for modal
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && !editModal.hidden) {
-        closeModal();
-    }
+// ➋ Reset timeline & clear storage
+resetBtn.addEventListener('click', () => {
+  if (confirm('Clear the timeline and delete all saved notes?')) {
+    localStorage.clear();
+    location.reload();
+  }
 });
 
-// --- DRAG/SWIPE/KEYBOARD SCROLL UX LAYER ---
-(function enableTimelineDragScroll() {
-    const track = timelineYears;
-    let isDown = false;
-    let startX;
-    let scrollLeft;
-    let lastMove = 0;
-    let velocity = 0;
-    let rafId = null;
+/*-------------  Initial load -------------*/
+window.addEventListener('DOMContentLoaded', () => {
+  // If keys exist in localStorage, recreate timeline from the highest year number found
+  const storedKeys = Object.keys(localStorage).filter(k => /^timeline-Y\d+-/.test(k));
+  if (storedKeys.length) {
+    const maxYear = storedKeys
+      .map(k => parseInt(k.match(/^timeline-Y(\d+)-/)[1], 10))
+      .reduce((a, b) => Math.max(a, b), 0);
+    buildTimeline(maxYear);
+    yearModalEl.style.display = 'none';
+  }
+});
 
-    // Mouse events
-    track.addEventListener('mousedown', (e) => {
-        isDown = true;
-        track.classList.add('dragging');
-        startX = e.pageX - track.offsetLeft;
-        scrollLeft = track.scrollLeft;
-        lastMove = e.pageX;
-        cancelMomentum();
+/*==========================================================
+  Function: buildTimeline
+  Desc    : Dynamically constructs the DOM nodes for each
+            academic year and its three semesters.
+==========================================================*/
+function buildTimeline(years) {
+  timelineEl.innerHTML = ''; // wipe any existing nodes
+  for (let y = 1; y <= years; y++) {
+    const yearBlock = document.createElement('div');
+    yearBlock.className = 'year';
+    yearBlock.dataset.year = y;
+    yearBlock.innerHTML = `<h2>Year ${y}</h2>`;
+    
+    // Semester definitions (array keeps order)
+    ['Fall', 'Winter', 'Summer'].forEach(sem => {
+      yearBlock.appendChild(createSemesterBox(y, sem));
     });
-    track.addEventListener('mouseleave', () => {
-        isDown = false;
-        track.classList.remove('dragging');
-    });
-    track.addEventListener('mouseup', () => {
-        isDown = false;
-        track.classList.remove('dragging');
-        startMomentum();
-    });
-    track.addEventListener('mousemove', (e) => {
-        if (!isDown) return;
-        e.preventDefault();
-        const x = e.pageX - track.offsetLeft;
-        const walk = (x - startX);
-        velocity = e.pageX - lastMove;
-        lastMove = e.pageX;
-        track.scrollLeft = scrollLeft - walk;
-    });
+    timelineEl.appendChild(yearBlock);
+  }
+}
 
-    // Touch events
-    let touchStartX = 0;
-    let touchScrollLeft = 0;
-    let lastTouchMove = 0;
-    let touchVelocity = 0;
-    track.addEventListener('touchstart', (e) => {
-        isDown = true;
-        touchStartX = e.touches[0].pageX;
-        touchScrollLeft = track.scrollLeft;
-        lastTouchMove = e.touches[0].pageX;
-        cancelMomentum();
-    });
-    track.addEventListener('touchend', () => {
-        isDown = false;
-        startMomentum(true);
-    });
-    track.addEventListener('touchmove', (e) => {
-        if (!isDown) return;
-        const x = e.touches[0].pageX;
-        const walk = (x - touchStartX);
-        touchVelocity = x - lastTouchMove;
-        lastTouchMove = x;
-        track.scrollLeft = touchScrollLeft - walk;
-    });
+/*==========================================================
+  Function: createSemesterBox
+  Desc    : Returns a DOM element (div.semester) containing
+            label, editable area, and Save/Edit toggles.
+==========================================================*/
+function createSemesterBox(year, sem) {
+  const key   = `timeline-Y${year}-${sem}`;
+  const saved = localStorage.getItem(key) || '';
 
-    // Momentum scrolling
-    function startMomentum(isTouch) {
-        let v = isTouch ? touchVelocity : velocity;
-        if (Math.abs(v) < 2) return;
-        let decay = 0.95;
-        function momentum() {
-            track.scrollLeft -= v;
-            v *= decay;
-            if (Math.abs(v) > 0.5) {
-                rafId = requestAnimationFrame(momentum);
-            } else {
-                cancelMomentum();
-            }
-        }
-        momentum();
-    }
-    function cancelMomentum() {
-        if (rafId) cancelAnimationFrame(rafId);
-        rafId = null;
-    }
+  // Root element
+  const box = document.createElement('div');
+  box.className = 'semester';
+  box.role = 'listitem';
+  box.dataset.key = key;
 
-    // Keyboard navigation
-    track.setAttribute('tabindex', '0');
-    track.addEventListener('keydown', (e) => {
-        if (e.key === 'ArrowLeft') {
-            e.preventDefault();
-            track.scrollBy({ left: -track.clientWidth, behavior: 'smooth' });
-        } else if (e.key === 'ArrowRight') {
-            e.preventDefault();
-            track.scrollBy({ left: track.clientWidth, behavior: 'smooth' });
-        }
-    });
-})(); 
+  // Label
+  const label = document.createElement('label');
+  label.textContent = `${sem} Semester`;
+  box.appendChild(label);
+
+  // Static text view (shown when not editing)
+  const staticText = document.createElement('div');
+  staticText.className = 'static-text';
+  staticText.textContent = saved || '— click Edit to add notes —';
+  staticText.style.display = saved ? 'block' : 'none';
+  box.appendChild(staticText);
+
+  // Editable textarea (hidden until Edit pressed)
+  const textarea = document.createElement('textarea');
+  textarea.value = saved;
+  textarea.style.display = saved ? 'none' : 'block';
+  box.appendChild(textarea);
+
+  // Button row
+  const btnRow = document.createElement('div');
+  btnRow.className = 'btn-row';
+
+  const saveBtn = document.createElement('button');
+  saveBtn.textContent = 'Save';
+  const editBtn = document.createElement('button');
+  editBtn.textContent = 'Edit';
+
+  // Save logic
+  saveBtn.addEventListener('click', () => {
+    const val = textarea.value.trim();
+    localStorage.setItem(key, val);
+    staticText.textContent = val || '— click Edit to add notes —';
+    textarea.style.display = 'none';
+    staticText.style.display = 'block';
+  });
+
+  // Edit logic
+  editBtn.addEventListener('click', () => {
+    textarea.style.display = 'block';
+    staticText.style.display = 'none';
+    textarea.focus();
+  });
+
+  btnRow.append(saveBtn, editBtn);
+  box.appendChild(btnRow);
+
+  return box;
+}
