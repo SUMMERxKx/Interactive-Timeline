@@ -229,6 +229,7 @@ document.addEventListener('keydown', (e) => {
         isDown = false;
         track.classList.remove('dragging');
         startMomentum();
+        snapToNearestYear();
     });
     track.addEventListener('mousemove', (e) => {
         if (!isDown) return;
@@ -255,6 +256,7 @@ document.addEventListener('keydown', (e) => {
     track.addEventListener('touchend', () => {
         isDown = false;
         startMomentum(true);
+        snapToNearestYear();
     });
     track.addEventListener('touchmove', (e) => {
         if (!isDown) return;
@@ -277,6 +279,7 @@ document.addEventListener('keydown', (e) => {
                 rafId = requestAnimationFrame(momentum);
             } else {
                 cancelMomentum();
+                snapToNearestYear();
             }
         }
         momentum();
@@ -286,15 +289,75 @@ document.addEventListener('keydown', (e) => {
         rafId = null;
     }
 
+    // Snap to nearest year block
+    function snapToNearestYear() {
+        const yearBlocks = Array.from(track.querySelectorAll('.year-block'));
+        if (!yearBlocks.length) return;
+        const trackRect = track.getBoundingClientRect();
+        let minDist = Infinity;
+        let snapBlock = null;
+        for (const block of yearBlocks) {
+            const blockRect = block.getBoundingClientRect();
+            const dist = Math.abs(blockRect.left - trackRect.left);
+            if (dist < minDist) {
+                minDist = dist;
+                snapBlock = block;
+            }
+        }
+        if (snapBlock) {
+            const scrollTo = snapBlock.offsetLeft - track.offsetLeft;
+            track.scrollTo({ left: scrollTo, behavior: 'smooth' });
+        }
+    }
+
     // Keyboard navigation
     track.setAttribute('tabindex', '0');
     track.addEventListener('keydown', (e) => {
         if (e.key === 'ArrowLeft') {
             e.preventDefault();
-            track.scrollBy({ left: -track.clientWidth, behavior: 'smooth' });
+            scrollToPrevYear();
         } else if (e.key === 'ArrowRight') {
             e.preventDefault();
-            track.scrollBy({ left: track.clientWidth, behavior: 'smooth' });
+            scrollToNextYear();
         }
     });
+
+    function scrollToPrevYear() {
+        const yearBlocks = Array.from(track.querySelectorAll('.year-block'));
+        if (!yearBlocks.length) return;
+        const trackRect = track.getBoundingClientRect();
+        let currentIdx = 0;
+        let minDist = Infinity;
+        for (let i = 0; i < yearBlocks.length; i++) {
+            const blockRect = yearBlocks[i].getBoundingClientRect();
+            const dist = Math.abs(blockRect.left - trackRect.left);
+            if (dist < minDist) {
+                minDist = dist;
+                currentIdx = i;
+            }
+        }
+        if (currentIdx > 0) {
+            const scrollTo = yearBlocks[currentIdx - 1].offsetLeft - track.offsetLeft;
+            track.scrollTo({ left: scrollTo, behavior: 'smooth' });
+        }
+    }
+    function scrollToNextYear() {
+        const yearBlocks = Array.from(track.querySelectorAll('.year-block'));
+        if (!yearBlocks.length) return;
+        const trackRect = track.getBoundingClientRect();
+        let currentIdx = 0;
+        let minDist = Infinity;
+        for (let i = 0; i < yearBlocks.length; i++) {
+            const blockRect = yearBlocks[i].getBoundingClientRect();
+            const dist = Math.abs(blockRect.left - trackRect.left);
+            if (dist < minDist) {
+                minDist = dist;
+                currentIdx = i;
+            }
+        }
+        if (currentIdx < yearBlocks.length - 1) {
+            const scrollTo = yearBlocks[currentIdx + 1].offsetLeft - track.offsetLeft;
+            track.scrollTo({ left: scrollTo, behavior: 'smooth' });
+        }
+    }
 })(); 
