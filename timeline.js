@@ -18,6 +18,8 @@ const saveBtn = document.getElementById('save-btn');
 const cancelBtn = document.getElementById('cancel-btn');
 const progressBarInner = document.getElementById('progress-bar-inner');
 const ariaLive = document.getElementById('aria-live');
+const prevYearBtn = document.getElementById('prev-year-btn');
+const nextYearBtn = document.getElementById('next-year-btn');
 
 // Event Listeners
 generateBtn.addEventListener('click', generateTimeline);
@@ -30,6 +32,9 @@ resetBtn.addEventListener('click', resetTimeline);
 yearsInput.addEventListener('input', () => {
     resetBtn.hidden = true;
 });
+
+// Remove left/right arrow key navigation from timeline-years
+timelineYears.removeEventListener('keydown', () => {});
 
 // Generate timeline grid grouped by year
 function generateTimeline() {
@@ -339,6 +344,7 @@ document.addEventListener('keydown', (e) => {
         if (currentIdx > 0) {
             const scrollTo = yearBlocks[currentIdx - 1].offsetLeft - track.offsetLeft;
             track.scrollTo({ left: scrollTo, behavior: 'smooth' });
+            animateYearTransition(yearBlocks[currentIdx - 1]);
         }
     }
     function scrollToNextYear() {
@@ -358,6 +364,21 @@ document.addEventListener('keydown', (e) => {
         if (currentIdx < yearBlocks.length - 1) {
             const scrollTo = yearBlocks[currentIdx + 1].offsetLeft - track.offsetLeft;
             track.scrollTo({ left: scrollTo, behavior: 'smooth' });
+            animateYearTransition(yearBlocks[currentIdx + 1]);
         }
+    }
+
+    // Add a transition effect to the year card
+    function animateYearTransition(yearBlock) {
+        yearBlock.classList.add('year-transition');
+        setTimeout(() => {
+            yearBlock.classList.remove('year-transition');
+        }, 500);
+    }
+
+    // Attach the button listeners here, after the helpers are declared
+    if (prevYearBtn && nextYearBtn) {
+        prevYearBtn.addEventListener('click', scrollToPrevYear);
+        nextYearBtn.addEventListener('click', scrollToNextYear);
     }
 })(); 
