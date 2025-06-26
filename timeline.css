@@ -48,15 +48,9 @@
 }
 
 /* Font usage for the site */
-body {
-    font-family: 'Inter', Arial, sans-serif;
+body, p, .instructions p, label, button, .cell-content, .modal-content, .controls, h1, h2, h3, h4, h5, h6, .year-title {
+    font-family: 'Roboto Slab', serif !important;
     font-weight: 400;
-    background: var(--tru-gray-bg) url('assets/tru-background.svg') top center no-repeat;
-    background-size: cover;
-    color: #222;
-    margin: 0;
-    padding: 0;
-    min-height: 100vh;
 }
 
 h1, .main-title {
@@ -71,10 +65,6 @@ h1, .main-title {
 h2, .year-title {
     font-family: 'Roboto', Arial, sans-serif;
     font-weight: 600;
-}
-.instructions p, label, button, .cell-content, .modal-content, .controls {
-    font-family: 'Inter', Arial, sans-serif;
-    font-weight: 400;
 }
 
 .timeline-container {
