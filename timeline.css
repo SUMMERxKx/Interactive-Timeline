@@ -10,14 +10,71 @@
     --tru-font: 'Lora', 'Inter', system-ui, -apple-system, serif, sans-serif;
 }
 
+/* Font-face declarations */
+@font-face {
+    font-family: 'Roboto Slab';
+    src: url('assets/Inter,Roboto,Roboto_Slab/Roboto_Slab/RobotoSlab-VariableFont_wght.ttf') format('truetype');
+    font-weight: 100 900;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Roboto';
+    src: url('assets/Inter,Roboto,Roboto_Slab/Roboto/Roboto-VariableFont_wdth,wght.ttf') format('truetype');
+    font-weight: 100 900;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Roboto';
+    src: url('assets/Inter,Roboto,Roboto_Slab/Roboto/Roboto-Italic-VariableFont_wdth,wght.ttf') format('truetype');
+    font-weight: 100 900;
+    font-style: italic;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Inter';
+    src: url('assets/Inter,Roboto,Roboto_Slab/Inter/Inter-VariableFont_opsz,wght.ttf') format('truetype');
+    font-weight: 100 900;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Inter';
+    src: url('assets/Inter,Roboto,Roboto_Slab/Inter/Inter-Italic-VariableFont_opsz,wght.ttf') format('truetype');
+    font-weight: 100 900;
+    font-style: italic;
+    font-display: swap;
+}
+
+/* Font usage for the site */
 body {
-    font-family: var(--tru-font);
+    font-family: 'Inter', Arial, sans-serif;
+    font-weight: 400;
     background: var(--tru-gray-bg) url('assets/tru-background.svg') top center no-repeat;
     background-size: cover;
     color: #222;
     margin: 0;
     padding: 0;
     min-height: 100vh;
+}
+
+h1, .main-title {
+    font-family: 'Roboto Slab', 'Roboto', Arial, serif;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    color: var(--tru-primary);
+    margin-bottom: 1rem;
+    text-align: center;
+    font-size: 1.5rem;
+}
+h2, .year-title {
+    font-family: 'Roboto', Arial, sans-serif;
+    font-weight: 600;
+}
+.instructions p, label, button, .cell-content, .modal-content, .controls {
+    font-family: 'Inter', Arial, sans-serif;
+    font-weight: 400;
 }
 
 .timeline-container {
@@ -28,15 +85,6 @@ body {
     border-radius: var(--tru-radius);
     box-shadow: var(--tru-shadow);
     position: relative;
-}
-
-h1 {
-    color: var(--tru-primary);
-    font-weight: 700;
-    margin-bottom: 1rem;
-    text-align: center;
-    letter-spacing: 0.02em;
-    font-size: 1.5rem;
 }
 
 /* Progress Bar */
@@ -521,9 +569,13 @@ h1 {
         flex-direction: column;
         gap: 0.5rem;
     }
-    .tru-logo, .openpress-logo {
-        height: 40px;
-        max-width: 90vw;
+    .tru-logo {
+        height: 120px;
+        max-width: 200vw;
+    }
+    .openpress-logo {
+        height: 44px;
+        max-width: 60vw;
     }
 }
 
@@ -562,35 +614,39 @@ h1 {
         width: 100%;
     }
     .year-block {
-        width: 100vw;
-        min-width: 100vw;
-        max-width: 100vw;
-        flex: 0 0 100vw;
+        width: 100%;
+        min-width: 100%;
+        max-width: 100%;
+        flex: 0 0 100%;
         padding: 1rem 0.5rem 0.7rem 0.5rem;
         scroll-snap-align: center;
+        box-sizing: border-box;
     }
     .year-title {
         font-size: 1.01rem;
     }
     .year-semesters {
         flex-direction: column;
-        gap: 0.5rem;
+        gap: 1.7rem;
         width: 100%;
     }
     .semester-cell {
-        width: 100%;
+        width: 80%;
         min-width: 0;
-        max-width: 100%;
-        height: 56px;
-        min-height: 56px;
-        max-height: 56px;
+        max-width: 80%;
+        height: auto;
+        min-height: 180px;
+        max-height: none;
         border-radius: 20px;
         font-size: 0.98rem;
         padding: 0.7rem 0.8rem;
         margin-bottom: 0.1rem;
+        box-sizing: border-box;
+        margin-left: auto;
+        margin-right: auto;
     }
     .cell-content {
-        max-height: 28px;
+        max-height: none;
     }
 }
 
